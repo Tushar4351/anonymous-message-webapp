@@ -20,7 +20,7 @@ export default function Home() {
   return (
     <>
       {/* Main content */}
-      <main className="flex-grow flex flex-col pt-24 text-white">
+      <main className="flex-grow h-full flex flex-col pt-24 text-white">
         <div className="p-4">
         <section className="container mx-auto text-center flex flex-col sm:flex-row gap-5 mb-8 md:mb-12">
           <div className="text-left">
