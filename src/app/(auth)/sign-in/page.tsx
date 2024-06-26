@@ -53,9 +53,10 @@ export default function SignInForm() {
         });
       }
     }
-
+    console.log(result?.url);
     if (result?.url) {
       router.replace("/dashboard");
+      console.log("login");
     }
   };
 
@@ -146,7 +147,7 @@ export default function SignInForm() {
                     </FormItem>
                   )}
                 />
-                <Button type="submit" className="w-full">
+                <Button className="w-full" type="submit">
                   Sign In
                 </Button>
               </form>
