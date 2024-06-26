@@ -10,6 +10,10 @@ const Navbar = () => {
   const { data: session } = useSession();
   const user: User = session?.user;
 
+  const handleSignOut = () => {
+    signOut({ callbackUrl: '/' });
+  };
+
   return (
     <nav className="p-4 shadow-sm text-black">
       <div className="container mx-auto flex md:flex-row justify-between items-center">
@@ -20,7 +24,7 @@ const Navbar = () => {
           <>
             <span className="mr-4">Welcome, {user.username || user.email}</span>
             <Button
-              onClick={() => signOut()}
+              onClick={handleSignOut}
               className="w-full sm:px-8 hover:bg-black/85 hover:text-white rounded-lg md:w-auto bg-black text-white transition-transform transform hover:scale-105"
               variant="outline"
             >
