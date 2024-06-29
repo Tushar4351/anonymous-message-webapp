@@ -1,14 +1,13 @@
-'use client';
+"use client";
 
-import React, { useState } from 'react';
-import axios, { AxiosError } from 'axios';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm } from 'react-hook-form';
-import { Loader2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
-import { CardHeader, CardContent, Card } from '@/components/ui/card';
-import { useCompletion } from 'ai/react';
+import React, { useEffect, useState } from "react";
+import axios, { AxiosError } from "axios";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import { Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
+import { CardHeader, CardContent, Card } from "@/components/ui/card";
 import {
   Form,
   FormControl,
@@ -16,16 +15,16 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/ui/form';
-import { Textarea } from '@/components/ui/textarea';
-import { toast } from '@/components/ui/use-toast';
-import * as z from 'zod';
-import { ApiResponse } from '@/types/ApiResponse';
-import Link from 'next/link';
-import { useParams } from 'next/navigation';
-import { messageSchema } from '@/schemas/messageSchema';
+} from "@/components/ui/form";
+import { Textarea } from "@/components/ui/textarea";
+import { toast } from "@/components/ui/use-toast";
+import * as z from "zod";
+import { ApiResponse } from "@/types/ApiResponse";
+import Link from "next/link";
+import { useParams } from "next/navigation";
+import { messageSchema } from "@/schemas/messageSchema";
 
-const specialChar = '||';
+const specialChar = "||";
 
 const parseStringMessages = (messageString: string): string[] => {
   return messageString.split(specialChar);
@@ -37,61 +36,75 @@ const initialMessageString =
 export default function SendMessage() {
   const params = useParams<{ username: string }>();
   const username = params.username;
-
-  const {
-    complete,
-    completion,
-    isLoading: isSuggestLoading,
-    error,
-  } = useCompletion({
-    api: '/api/suggest-messages',
-    initialCompletion: initialMessageString,
-  });
-
+  const [isSending, setIsSending] = useState(false);
+  const [isSuggesting, setIsSuggesting] = useState(false);
+  const [suggestedMessages, setSuggestedMessages] = useState<string[]>([]);
+  
   const form = useForm<z.infer<typeof messageSchema>>({
     resolver: zodResolver(messageSchema),
   });
 
-  const messageContent = form.watch('content');
+  const messageContent = form.watch("content");
 
+  useEffect(() => {
+    setSuggestedMessages(
+      initialMessageString.split("||").map((msg) => msg.trim())
+    );
+  }, []);
   const handleMessageClick = (message: string) => {
-    form.setValue('content', message);
+    form.setValue("content", message);
   };
 
-  const [isLoading, setIsLoading] = useState(false);
-
   const onSubmit = async (data: z.infer<typeof messageSchema>) => {
-    setIsLoading(true);
+    setIsSending(true);
     try {
-      const response = await axios.post<ApiResponse>('/api/send-message', {
+      const response = await axios.post<ApiResponse>("/api/send-message", {
         ...data,
         username,
       });
 
       toast({
         title: response.data.message,
-        variant: 'default',
+        variant: "default",
       });
-      form.reset({ ...form.getValues(), content: '' });
+      form.reset({ ...form.getValues(), content: "" });
     } catch (error) {
       const axiosError = error as AxiosError<ApiResponse>;
       toast({
-        title: 'Error',
+        title: "Error",
         description:
-          axiosError.response?.data.message ?? 'Failed to sent message',
-        variant: 'destructive',
+          axiosError.response?.data.message ?? "Failed to send message",
+        variant: "destructive",
       });
     } finally {
-      setIsLoading(false);
+      setIsSending(false);
     }
   };
 
   const fetchSuggestedMessages = async () => {
+    setIsSuggesting(true);
     try {
-      complete('');
+      const response = await axios.post("/api/suggest-messages");
+     // console.log("Suggested Messages Response:", response.data);
+
+      if (response.data.suggestedMessages) {
+        const messageArray = response.data.suggestedMessages
+          .split("||")
+          .map((msg: string) => msg.trim());
+        setSuggestedMessages(messageArray);
+      //  console.log("Parsed Suggested Messages:", messageArray);
+      } else {
+        console.error("No suggested messages in the response");
+      }
     } catch (error) {
-      console.error('Error fetching messages:', error);
-      // Handle error appropriately
+      console.error("Error fetching messages:", error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch suggested messages. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSuggesting(false);
     }
   };
 
@@ -120,13 +133,13 @@ export default function SendMessage() {
             )}
           />
           <div className="flex justify-center">
-            {isLoading ? (
+            {isSending ? (
               <Button disabled>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Please wait
+                Sending...
               </Button>
             ) : (
-              <Button type="submit" disabled={isLoading || !messageContent}>
+              <Button type="submit" disabled={isSending || !messageContent}>
                 Send It
               </Button>
             )}
@@ -139,38 +152,42 @@ export default function SendMessage() {
           <Button
             onClick={fetchSuggestedMessages}
             className="my-4"
-            disabled={isSuggestLoading}
+            disabled={isSuggesting}
           >
-            Suggest Messages
+            {isSuggesting ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Loading...
+              </>
+            ) : (
+              "Suggest New Messages"
+            )}
           </Button>
           <p>Click on any message below to select it.</p>
         </div>
         <Card>
           <CardHeader>
-            <h3 className="text-xl font-semibold">Messages</h3>
+            <h3 className="text-xl font-semibold">Suggested Messages</h3>
           </CardHeader>
           <CardContent className="flex flex-col space-y-4">
-            {error ? (
-              <p className="text-red-500">{error.message}</p>
-            ) : (
-              parseStringMessages(completion).map((message, index) => (
-                <Button
-                  key={index}
-                  variant="outline"
-                  className="mb-2"
-                  onClick={() => handleMessageClick(message)}
-                >
-                  {message}
-                </Button>
-              ))
-            )}
+            {suggestedMessages.map((message, index) => (
+              <Button
+                key={index}
+                variant="outline"
+                className="mb-2"
+                onClick={() => handleMessageClick(message)}
+              >
+                {message}
+              </Button>
+            ))}
           </CardContent>
         </Card>
       </div>
+
       <Separator className="my-6" />
       <div className="text-center">
         <div className="mb-4">Get Your Message Board</div>
-        <Link href={'/sign-up'}>
+        <Link href={"/sign-up"}>
           <Button>Create Your Account</Button>
         </Link>
       </div>
