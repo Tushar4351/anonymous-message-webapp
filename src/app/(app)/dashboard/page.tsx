@@ -11,6 +11,7 @@ import { ApiResponse } from "@/types/ApiResponse";
 import { zodResolver } from "@hookform/resolvers/zod";
 import axios, { AxiosError } from "axios";
 import { Loader2, RefreshCcw } from "lucide-react";
+import { Types } from "mongoose";
 import { User } from "next-auth";
 import { useSession } from "next-auth/react";
 import React, { useCallback, useEffect, useState } from "react";
@@ -23,12 +24,11 @@ function UserDashboard() {
 
   const { toast } = useToast();
 
-  const handleDeleteMessage = (messageId: string) => {
-    setMessages(messages.filter((message) => message._id !== messageId));
+  const handleDeleteMessage = (messageId: string | Types.ObjectId) => {
+    setMessages(messages.filter((message) => message._id.toString() !== messageId.toString()));
   };
-
   const { data: session } = useSession();
-  console.log("user:", session?.user);
+  //console.log("user:", session?.user);
 
   const form = useForm({
     resolver: zodResolver(AcceptMessageSchema),
@@ -180,9 +180,9 @@ function UserDashboard() {
       </Button>
       <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-6">
         {messages.length > 0 ? (
-          messages.map((message, index) => (
+          messages.map((message) => (
             <MessageCard
-              key={message._id}
+              key={message._id.toString()}
               message={message}
               onMessageDelete={handleDeleteMessage}
             />

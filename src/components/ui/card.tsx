@@ -36,7 +36,8 @@ const CardTitle = React.forwardRef<
   <h3
     ref={ref}
     className={cn(
-      "text-2xl font-semibold leading-none tracking-tight",
+      "text-sm sm:text-xl font-semibold leading-none tracking-tight",
+      "box-border", // This applies box-sizing: border-box
       className
     )}
     {...props}

@@ -10,7 +10,7 @@ export async function GET(request: Request) {
   const session = await getServerSession(authOptions);
   const _user: User = session?.user;
 
-  console.log("user information", _user);
+  //console.log("user information", _user);
 
   if (!session || !_user) {
     return new Response(
@@ -20,7 +20,7 @@ export async function GET(request: Request) {
   }
 
   const userId = new mongoose.Types.ObjectId(_user._id);
-  console.log("user ID", userId);
+  //console.log("user ID", userId);
 
   try {
     const user = await UserModel.aggregate([
@@ -40,10 +40,9 @@ export async function GET(request: Request) {
     // If the user has no messages, return an empty array instead of an error
     const messages = user[0].messages.filter(Boolean);
 
-    return new Response(
-      JSON.stringify({ messages: messages, success: true }),
-      { status: 200 }
-    );
+    return new Response(JSON.stringify({ messages: messages, success: true }), {
+      status: 200,
+    });
   } catch (error) {
     console.error("An unexpected error occurred:", error);
     return new Response(
